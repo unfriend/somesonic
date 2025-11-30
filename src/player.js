@@ -3,6 +3,9 @@
  * Handles audio playback, queue management, and audio analysis
  */
 
+// Constants
+const RESTART_THRESHOLD_SECONDS = 3; // Seconds into track before restart vs previous
+
 export class AudioPlayer {
     constructor(audioElement) {
         this.audio = audioElement;
@@ -270,8 +273,8 @@ export class AudioPlayer {
      * Play previous track
      */
     previous() {
-        if (this.audio.currentTime > 3) {
-            // If more than 3 seconds into song, restart it
+        if (this.audio.currentTime > RESTART_THRESHOLD_SECONDS) {
+            // If more than threshold seconds into song, restart it
             this.audio.currentTime = 0;
         } else if (this.hasPrevious()) {
             this.playIndex(this.currentIndex - 1);

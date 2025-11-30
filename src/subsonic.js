@@ -236,10 +236,13 @@ export class SubsonicClient {
 
     /**
      * Generate authentication token
+     * Uses MD5 hashing as required by Subsonic API specification.
+     * Note: MD5 is used for legacy API compatibility, not security.
      * @returns {Promise<string>} Authentication token
      */
     async generateToken() {
         this.salt = generateSalt();
+        // Use simpleMd5 directly as SubtleCrypto doesn't support MD5 in most browsers
         this.token = simpleMd5(this.password + this.salt);
         return this.token;
     }

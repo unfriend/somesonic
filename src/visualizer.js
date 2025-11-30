@@ -3,6 +3,9 @@
  * Handles waveform and spectrogram rendering
  */
 
+// Constants
+const DEMO_ANIMATION_SPEED = 0.2;
+
 export class AudioVisualizer {
     constructor(waveformCanvas, spectrogramCanvas, analyser = null) {
         this.waveformCanvas = waveformCanvas;
@@ -98,7 +101,7 @@ export class AudioVisualizer {
         this._drawWaveform();
         this._drawSpectrogram();
         
-        this.demoTime += 0.2;
+        this.demoTime += DEMO_ANIMATION_SPEED;
         this.animationId = requestAnimationFrame(() => this._animate());
     }
 

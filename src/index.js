@@ -7,6 +7,9 @@ import { SubsonicClient } from './subsonic.js';
 import { AudioPlayer } from './player.js';
 import { AudioVisualizer } from './visualizer.js';
 
+// Constants
+const DEFAULT_SAMPLE_RATE = '44100 Hz';
+
 // Application state
 const state = {
     client: null,
@@ -453,7 +456,7 @@ function updateNowPlaying(track) {
     // Update status bar
     elements.statusFormat.textContent = (track.suffix || '---').toUpperCase();
     elements.statusBitrate.textContent = track.bitRate ? `${track.bitRate} kbps` : '--- kbps';
-    elements.statusSamplerate.textContent = '44100 Hz'; // Default, could be from track metadata
+    elements.statusSamplerate.textContent = DEFAULT_SAMPLE_RATE;
     elements.statusChannels.textContent = 'stereo';
 }
 
@@ -519,17 +522,19 @@ function hideSettingsModal() {
 
 /**
  * Save settings
+ * Note: Password is base64 encoded for basic obfuscation only.
+ * For production use, consider using the Web Crypto API for encryption
+ * or implementing OAuth/token-based authentication if supported by the server.
  */
 async function saveSettings() {
     state.settings.serverUrl = elements.serverUrl.value.trim();
     state.settings.username = elements.username.value.trim();
     state.settings.password = elements.password.value;
 
-    // Save to localStorage
+    // Save to localStorage with base64 obfuscation (not secure encryption)
     localStorage.setItem('somesonic_settings', JSON.stringify({
         serverUrl: state.settings.serverUrl,
         username: state.settings.username,
-        // Don't save password in plain text - in production, use more secure storage
         password: btoa(state.settings.password)
     }));
 
