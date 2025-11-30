@@ -1,0 +1,14 @@
+{
+  "name": "somesonic",
+  "version": "1.0.0",
+  "description": "modern beautiful subsonic client",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "npx serve .",
+    "test": "node --test src/**/*.test.js"
+  },
+  "keywords": ["subsonic", "music", "player", "audio"],
+  "author": "",
+  "license": "ISC"
+}
