@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fat Jon - [Wave Motion #07] Eyes [foobar2000]</title>
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-panel: #1e1e1e;
+            --bg-header: #2d2d2d;
+            --text-main: #d0d0d0;
+            --text-dim: #888;
+            --highlight: #3a3a3a;
+            --accent: #4a90e2;
+            --border: #333;
+            --scrollbar-bg: #1a1a1a;
+            --scrollbar-thumb: #3e3e3e;
+            --font-ui: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --font-mono: 'Consolas', 'Monaco', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none; /* mimic desktop app feel */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            font-size: 12px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Scrollbars --- */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+            background-color: var(--scrollbar-bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: var(--scrollbar-thumb);
+            border: 2px solid var(--scrollbar-bg);
+            border-radius: 0;
+        }
+        ::-webkit-scrollbar-corner {
+            background-color: var(--scrollbar-bg);
+        }
+
+        /* --- Menu Bar --- */
+        #menubar {
+            background-color: var(--bg-dark);
+            padding: 2px 5px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 15px;
+            font-size: 11px;
+        }
+        .menu-item {
+            cursor: pointer;
+            padding: 2px 5px;
+        }
+        .menu-item:hover {
+            background-color: var(--highlight);
+        }
+
+        /* --- Main Layout --- */
+        #main-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 45px); /* Minus menu and status bar */
+        }
+
+        /* --- Left Sidebar --- */
+        #sidebar {
+            width: 300px;
+            min-width: 200px;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            background-color: var(--bg-panel);
+        }
+
+        /* Tree View */
+        #library-tree {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px;
+            font-family: var(--font-ui);
+        }
+        .tree-node {
+            padding-left: 15px;
+            line-height: 1.4;
+            cursor: default;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .tree-node:hover {
+            background-color: var(--highlight);
+        }
+        .tree-group {
+            font-weight: bold;
+            color: var(--text-main);
+        }
+        .tree-item {
+            color: var(--text-dim);
+        }
+        .expander {
+            display: inline-block;
+            width: 12px;
+            text-align: center;
+            margin-right: 2px;
+            color: var(--text-dim);
+            font-family: monospace;
+            cursor: pointer;
+        }
+
+        /* Filter Box */
+        #sidebar-controls {
+            padding: 4px;
+            border-top: 1px solid var(--border);
+            background-color: var(--bg-panel);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .control-row {
+            display: flex;
+            gap: 4px;
+        }
+        select, input {
+            background-color: #000;
+            border: 1px solid #444;
+            color: var(--text-main);
+            font-size: 11px;
+            padding: 2px;
+            width: 100%;
+        }
+
+        /* Cover Art View (Bottom Left) */
+        #cover-art-display {
+            height: 300px;
+            background-color: #000;
+            border-top: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end; /* Align image to bottom like screenshot */
+        }
+        #cover-art-display img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            opacity: 0.9;
+        }
+        .cover-overlay-text {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+            font-size: 10px;
+            opacity: 0.7;
+        }
+
+        /* --- Right Panel --- */
+        #content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #101010;
+        }
+
+        /* Top Visualization (Waveform) */
+        #viz-top {
+            height: 120px;
+            background-color: #050505;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+        canvas.viz-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Playlist View */
+        #playlist-view {
+            flex: 1;
+            overflow-y: auto;
+            background-color: #121212;
+        }
+        
+        /* Playlist Header */
+        .pl-header {
+            display: grid;
+            grid-template-columns: 20px 80px 30px 1fr 60px; /* PlayStatus, Artist, TrackNo, Title, Duration */
+            padding: 2px 5px;
+            background-color: #252525;
+            border-bottom: 1px solid #333;
+            color: var(--text-dim);
+            font-size: 11px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* Album Group */
+        .album-group {
+            display: flex;
+            border-bottom: 1px solid #222;
+            padding: 5px 0;
+        }
+        .album-art-col {
+            width: 140px;
+            min-width: 140px;
+            padding: 5px 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .album-art-img {
+            width: 120px;
+            height: 120px;
+            background-color: #222;
+            object-fit: cover;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+        .album-group-header {
+            background-color: #1a1a1a;
+            color: #ddd;
+            padding: 2px 5px;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            margin-bottom: 2px;
+            font-size: 11px;
+        }
+
+        /* Tracks List within Group */
+        .track-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .track-row {
+            display: grid;
+            grid-template-columns: 1fr 50px 40px 300px 1fr 50px; /* Spacer, Artist, No, Title, Spacer, Time */
+            padding: 2px 5px;
+            color: #bbb;
+            border-bottom: 1px solid transparent;
+        }
+        /* Custom Grid for the specific look in screenshot */
+        /* Columns: [Spacer/Status] [Artist/Album Text] [Track No] [Title] [Duration] */
+        /* The screenshot is tricky: 
+           It has a header row: Album Cover | P.. | Artist/album | Track no | Title / track artist | Dura...
+           Inside groups: The album cover is on the left spanning rows. The rows align with columns.
+        */
+        
+        .pl-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .pl-table th {
+            text-align: left;
+            font-weight: normal;
+            color: #888;
+            background: #252525;
+            border-right: 1px solid #333;
+            border-bottom: 1px solid #333;
+            padding: 2px 4px;
+            font-size: 11px;
+        }
+        .pl-table td {
+            padding: 2px 4px;
+            vertical-align: top;
+            color: #ccc;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* The "Grouped" Look simulation using Table */
+        .group-row td {
+            padding-top: 8px;
+            border-top: 1px solid #222;
+        }
+        .album-cover-cell {
+            background-color: #121212;
+            vertical-align: top;
+            padding: 5px !important;
+        }
+        .cover-wrapper {
+            width: 100px;
+            height: 100px;
+            background: #333;
+        }
+        .cover-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .track-row:hover {
+            background-color: #222;
+        }
+        .track-row.active {
+            background-color: #2a2a2a;
+            color: #fff;
+            font-weight: bold;
+        }
+        .playing-indicator {
+            color: var(--text-main);
+            font-size: 10px;
+        }
+
+        /* Bottom Visualization (Spectrogram) */
+        #viz-bottom {
+            height: 120px;
+            background-color: #000;
+            border-top: 1px solid var(--border);
+            position: relative;
+        }
+
+        /* --- Status Bar --- */
+        #statusbar {
+            height: 22px;
+            background-color: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-dim);
+            gap: 10px;
+        }
+        .status-segment {
+            padding-right: 10px;
+            border-right: 1px solid #333;
+        }
+        .status-segment:last-child {
+            border: none;
+        }
+
+        /* Utility classes for text colors matching the screenshot */
+        .text-blue { color: #8ab4f8; }
+        .text-green { color: #81c995; }
+        .text-orange { color: #fce8b2; }
+    </style>
+</head>
+<body>
+
+    <!-- Menu Bar -->
+    <div id="menubar">
+        <div class="menu-item">File</div>
+        <div class="menu-item">Edit</div>
+        <div class="menu-item">View</div>
+        <div class="menu-item">Playback</div>
+        <div class="menu-item">Library</div>
+        <div class="menu-item">Help</div>
+    </div>
+
+    <div id="main-container">
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div id="library-tree">
+                <div class="tree-node tree-group"><span class="expander">-</span>All Music (2571)</div>
+                <div class="tree-node"><span class="expander">+</span>4Hero - [1994] Parallel Universe (10)</div>
+                <div class="tree-node"><span class="expander">+</span>9 Lazy 9 - [1993] The Herb (14)</div>
+                <div class="tree-node"><span class="expander">+</span>9 Lazy 9 - Bedsofaland (13)</div>
+                <div class="tree-node"><span class="expander">+</span>9 Lazy 9 - Electric Lazyland (17)</div>
+                <div class="tree-node"><span class="expander">+</span>9 Lazy 9 - Paradise Blown (17)</div>
+                <div class="tree-node"><span class="expander">+</span>9 Lazy 9 - Sweet Jones (12)</div>
+                <div class="tree-node"><span class="expander">+</span>2000 & One - Heritage (8)</div>
+                <div class="tree-node"><span class="expander">+</span>2562 - Fever (11)</div>
+                <div class="tree-node"><span class="expander">+</span>3582 - The Living Soul (13)</div>
+                <div class="tree-node"><span class="expander">+</span>!!! - [2010] Strange Weather, Isn't It? (10)</div>
+                <div class="tree-node"><span class="expander">-</span>Fat Jon - Wave Motion</div>
+                <div class="tree-node tree-item" style="padding-left: 30px;">01. Where?</div>
+                <div class="tree-node tree-item" style="padding-left: 30px; color: #fff;">07. Eyes</div>
+                <div class="tree-node"><span class="expander">+</span>µ-Ziq - [1997] Lunatic Harness (13)</div>
+                <div class="tree-node"><span class="expander">+</span>A Tribe Called Quest - Low End Theory (14)</div>
+                <div class="tree-node"><span class="expander">+</span>Actress - Splazsh (14)</div>
+            </div>
+
+            <div id="sidebar-controls">
+                <div class="control-row" style="justify-content: space-between; font-size: 10px; color: #888;">
+                    <span>View</span>
+                    <span>Filter</span>
+                </div>
+                <div class="control-row">
+                    <select><option>by artist/album</option></select>
+                    <input type="text" value="albentagmit" style="width: 80px;">
+                </div>
+            </div>
+
+            <div id="cover-art-display">
+                <!-- Using a placeholder for the sidebar large art -->
+                <svg width="100%" height="100%" viewBox="0 0 300 300" preserveAspectRatio="xMidYMid slice">
+                    <defs>
+                        <linearGradient id="sidebarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#4a3b32;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#1a1512;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <rect width="300" height="300" fill="url(#sidebarGrad)"/>
+                    <circle cx="150" cy="100" r="40" fill="#6d5848" opacity="0.5"/>
+                    <path d="M150 160 Q 200 250 100 300" stroke="#8c7360" stroke-width="2" fill="none"/>
+                    <rect x="20" y="250" width="260" height="40" fill="#000" opacity="0.6" />
+                </svg>
+                <div class="cover-overlay-text">fat jon the ample soul physician wave motion</div>
+            </div>
+        </div>
+
+        <!-- Right Content -->
+        <div id="content-area">
+            
+            <!-- Waveform Viz -->
+            <div id="viz-top">
+                <canvas id="waveformCanvas"></canvas>
+            </div>
+
+            <!-- Playlist -->
+            <div id="playlist-view">
+                <table class="pl-table">
+                    <colgroup>
+                        <col style="width: 120px;"> <!-- Art -->
+                        <col style="width: 20px;">  <!-- Playing Icon -->
+                        <col style="width: 180px;"> <!-- Artist/Album -->
+                        <col style="width: 40px;">  <!-- Track No -->
+                        <col style="width: auto;">  <!-- Title -->
+                        <col style="width: 60px;">  <!-- Duration -->
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Album cover</th>
+                            <th>P...</th>
+                            <th>Artist/album</th>
+                            <th>Track no</th>
+                            <th>Title / track artist</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Group 1: Fat Jon -->
+                        <tr class="group-row">
+                            <td rowspan="12" class="album-cover-cell">
+                                <div class="cover-wrapper" style="background: #3a2e28;">
+                                    <svg width="100" height="100">
+                                        <rect width="100" height="100" fill="#3a2e28"/>
+                                        <circle cx="50" cy="30" r="15" fill="#668eb6"/>
+                                        <path d="M20,80 Q50,20 80,80" fill="none" stroke="#6d5848" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                            </td>
+                            <td></td>
+                            <td class="text-blue">Fat Jon - Wave Motion</td>
+                            <td>01</td>
+                            <td>Where?</td>
+                            <td>3:41</td>
+                        </tr>
+                        <tr><td></td><td class="text-blue">Fat Jon - Wave Motion</td><td>02</td><td>Feel the Void</td><td>3:22</td></tr>
+                        <tr><td></td><td class="text-blue">Fat Jon - Wave Motion</td><td>03</td><td>Visual Music</td><td>3:30</td></tr>
+                        <tr><td></td><td class="text-blue">Fat Jon - Wave Motion</td><td>04</td><td>Watch Out</td><td>4:09</td></tr>
+                        <tr><td></td><td class="text-blue">Fat Jon - Wave Motion</td><td>05</td><td>For Stress</td><td>3:25</td></tr>
+                        <tr><td></td><td class="text-blue">Fat Jon - Wave Motion</td><td>06</td><td>1975</td><td>1:20</td></tr>
+                        <tr class="track-row active">
+                            <td>▶</td>
+                            <td class="text-blue">Fat Jon - Wave Motion</td>
+                            <td>07</td>
+                            <td>Eyes</td>
+                            <td>3:59</td>
+                        </tr>
+                        <tr><td></td><td class="text-blue">Fat Jon - Wave Motion</td><td>08</td><td>Wet Secrets</td><td>4:02</td></tr>
+                        <tr><td></td><td class="text-blue">Fat Jon - Wave Motion</td><td>09</td><td>Depths</td><td>3:19</td></tr>
+                        <tr><td></td><td class="text-blue">Fat Jon - Wave Motion</td><td>10</td><td>Automated Life Machines</td><td>3:43</td></tr>
+                        <tr><td></td><td class="text-blue">Fat Jon - Wave Motion</td><td>11</td><td>Surrection</td><td>4:02</td></tr>
+                        <tr><td></td><td class="text-blue">Fat Jon - Wave Motion</td><td>12</td><td>Disgust</td><td>1:10</td></tr>
+
+                        <!-- Group 2: RAC -->
+                        <tr class="group-row">
+                            <td rowspan="9" class="album-cover-cell">
+                                <div class="cover-wrapper" style="background: #fce8b2;">
+                                    <svg width="100" height="100">
+                                        <rect width="100" height="100" fill="#fce8b2"/>
+                                        <path d="M30,80 L30,40 Q30,20 50,20 L70,20 L60,10 M70,20 L60,30" fill="none" stroke="#000" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                            </td>
+                            <td></td>
+                            <td class="text-green">RAC - Diversions</td>
+                            <td>01</td>
+                            <td>Electro Fish</td>
+                            <td>6:17</td>
+                        </tr>
+                        <tr><td></td><td class="text-green">RAC - Diversions</td><td>02</td><td>High Wire</td><td>6:08</td></tr>
+                        <tr><td></td><td class="text-green">RAC - Diversions</td><td>03</td><td>Hula Loops</td><td>6:51</td></tr>
+                        <tr><td></td><td class="text-green">RAC - Diversions</td><td>04</td><td>Raindancer</td><td>5:53</td></tr>
+                        <tr><td></td><td class="text-green">RAC - Diversions</td><td>05</td><td>Mindfield</td><td>6:16</td></tr>
+                        <tr><td></td><td class="text-green">RAC - Diversions</td><td>06</td><td>Wavelength</td><td>6:33</td></tr>
+                        <tr><td></td><td class="text-green">RAC - Diversions</td><td>07</td><td>Neo Rio</td><td>6:14</td></tr>
+                        <tr><td></td><td class="text-green">RAC - Diversions</td><td>08</td><td>Choobes</td><td>6:00</td></tr>
+                        <tr><td></td><td class="text-green">RAC - Diversions</td><td>09</td><td>Detour</td><td>6:07</td></tr>
+
+                        <!-- Group 3: The Roots -->
+                        <tr class="group-row">
+                            <td rowspan="2" class="album-cover-cell">
+                                <div class="cover-wrapper" style="background: #2a3b2a;">
+                                    <svg width="100" height="100">
+                                        <rect width="100" height="100" fill="#2a2a2a"/>
+                                        <text x="5" y="20" fill="#587c58" font-family="monospace" font-size="10">THE ROOTS</text>
+                                        <rect x="30" y="40" width="40" height="10" fill="#fce8b2"/>
+                                    </svg>
+                                </div>
+                            </td>
+                            <td></td>
+                            <td class="text-orange">The Roots - Illadelph Halflife</td>
+                            <td>01</td>
+                            <td>Intro</td>
+                            <td>0:35</td>
+                        </tr>
+                        <tr><td></td><td class="text-orange">The Roots - Illadelph Halflife</td><td>02</td><td>Respond/React</td><td>5:07</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Spectrogram Viz -->
+            <div id="viz-bottom">
+                <canvas id="spectroCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Status -->
+    <div id="statusbar">
+        <span class="status-segment">FLAC</span>
+        <span class="status-segment">645 kbps</span>
+        <span class="status-segment">44100 Hz</span>
+        <span class="status-segment">stereo</span>
+        <span class="status-segment" style="color: #fff;">2:29 / 3:59</span>
+    </div>
+
+    <script>
+        /* --- Waveform Animation (Oscilloscope style) --- */
+        const waveCanvas = document.getElementById('waveformCanvas');
+        const waveCtx = waveCanvas.getContext('2d');
+        
+        // Resize observer to handle container resizing
+        function resizeCanvas(canvas) {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        
+        resizeCanvas(waveCanvas);
+        window.addEventListener('resize', () => resizeCanvas(waveCanvas));
+
+        let time = 0;
+
+        function drawWaveform() {
+            const w = waveCanvas.width;
+            const h = waveCanvas.height;
+            const cy = h / 2;
+
+            waveCtx.clearRect(0, 0, w, h);
+
+            // Draw center line
+            waveCtx.beginPath();
+            waveCtx.strokeStyle = '#333';
+            waveCtx.lineWidth = 1;
+            waveCtx.moveTo(0, cy);
+            waveCtx.lineTo(w, cy);
+            waveCtx.stroke();
+
+            // Draw Left Channel (Simulated)
+            waveCtx.beginPath();
+            waveCtx.strokeStyle = '#a0a0a0'; // Greyish white
+            waveCtx.lineWidth = 1;
+
+            for (let x = 0; x < w; x++) {
+                // Combine sine waves to create "musical" looking noise
+                const freq1 = Math.sin(x * 0.05 + time);
+                const freq2 = Math.sin(x * 0.13 + time * 1.5);
+                const beat = Math.sin(time * 0.5) * Math.sin(x * 0.01); // Amplitude modulation
+                
+                // Add some randomness for noise
+                const noise = (Math.random() - 0.5) * 0.2;
+                
+                const y = cy + (freq1 * 20 + freq2 * 10) * beat + (noise * 50 * beat);
+                
+                if (x === 0) waveCtx.moveTo(x, y);
+                else waveCtx.lineTo(x, y);
+            }
+            waveCtx.stroke();
+            
+            // Faint ghosting for right channel visual
+            waveCtx.beginPath();
+            waveCtx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+            
+            for (let x = 0; x < w; x+=2) {
+                const freq1 = Math.sin(x * 0.04 + time + 1);
+                const beat = Math.sin(time * 0.5) * Math.sin(x * 0.015);
+                const y = cy + (freq1 * 30) * beat;
+                if (x === 0) waveCtx.moveTo(x, y);
+                else waveCtx.lineTo(x, y);
+            }
+            waveCtx.stroke();
+
+            time += 0.2;
+            requestAnimationFrame(drawWaveform);
+        }
+        drawWaveform();
+
+
+        /* --- Spectrogram Animation (Waterfall style) --- */
+        const spectroCanvas = document.getElementById('spectroCanvas');
+        const spectroCtx = spectroCanvas.getContext('2d');
+        resizeCanvas(spectroCanvas);
+        window.addEventListener('resize', () => resizeCanvas(spectroCanvas));
+
+        // Create an offscreen buffer to hold the history of the spectrogram
+        let bufferCanvas = document.createElement('canvas');
+        let bufferCtx = bufferCanvas.getContext('2d');
+        bufferCanvas.width = 2000; // ample width
+        bufferCanvas.height = 150;
+
+        let scrollOffset = 0;
+
+        function drawSpectrogram() {
+            const w = spectroCanvas.width;
+            const h = spectroCanvas.height;
+
+            // Shift image to the left
+            const imageData = spectroCtx.getImageData(1, 0, w - 1, h);
+            spectroCtx.putImageData(imageData, 0, 0);
+
+            // Generate new vertical strip at the right edge
+            for (let y = 0; y < h; y++) {
+                // Gradient logic: bright at bottom (low freq), dim at top (high freq)
+                // Modulated by "beat"
+                
+                const beat = Math.abs(Math.sin(time * 0.1)) > 0.8 ? 1 : 0.2; // simulated kick drum
+                const highHat = Math.random() > 0.9 ? 1 : 0;
+                
+                let intensity = 0;
+                
+                // Bass frequencies (bottom)
+                if (y > h * 0.8) {
+                    intensity = Math.random() * beat * 200;
+                } 
+                // Mid frequencies
+                else if (y > h * 0.4) {
+                    intensity = Math.random() * 50;
+                }
+                // High frequencies
+                else {
+                    intensity = Math.random() * highHat * 100;
+                }
+
+                // Color mapping: Black -> Grey -> White
+                const val = Math.min(255, Math.floor(intensity));
+                
+                // Greyscale with slight tint
+                spectroCtx.fillStyle = `rgb(${val}, ${val}, ${val + 20})`;
+                spectroCtx.fillRect(w - 1, y, 1, 1);
+            }
+
+            requestAnimationFrame(drawSpectrogram);
+        }
+        
+        // Simpler static-ish draw for performance in mockup
+        function drawStaticSpectrogram() {
+             const w = spectroCanvas.width;
+            const h = spectroCanvas.height;
+            spectroCtx.fillStyle = '#000';
+            spectroCtx.fillRect(0,0,w,h);
+            
+            for(let x=0; x<w; x++) {
+                // Create vertical bands of varying density
+                const bandEnergy = Math.sin(x * 0.1) * Math.sin(x * 0.03) + 1; // 0 to 2
+                
+                for(let y=0; y<h; y++) {
+                    const noise = Math.random();
+                    // More energy at bottom
+                    const yFactor = (y / h); 
+                    
+                    if (noise * bandEnergy * yFactor > 0.6) {
+                        const brightness = Math.floor(Math.random() * 150);
+                        spectroCtx.fillStyle = `rgba(${brightness}, ${brightness}, ${brightness+30}, 0.5)`;
+                        spectroCtx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+        }
+        
+        drawStaticSpectrogram();
+        
+        // Redraw static on resize
+        window.addEventListener('resize', drawStaticSpectrogram);
+
+    </script>
+</body>
+</html>
